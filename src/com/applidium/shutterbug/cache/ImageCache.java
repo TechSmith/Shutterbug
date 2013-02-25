@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -32,9 +34,11 @@ public class ImageCache {
     private Context                  mContext;
     private LruCache<String, Bitmap> mMemoryCache;
     private DiskLruCache             mDiskCache;
+    private Executor                 mCacheExecutor; // TODO: Merge with Cloud SDK executors
 
     ImageCache(Context context) {
         mContext = context;
+        mCacheExecutor = Executors.newFixedThreadPool( 2 );
         // Get memory class of this device, exceeding this amount will throw an
         // OutOfMemory exception.
         final int memClass = ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getMemoryClass();
@@ -77,7 +81,7 @@ public class ImageCache {
         }
 
         if (mDiskCache != null) {
-            new BitmapDecoderTask(cacheKey, listener, downloadRequest).execute();
+            new BitmapDecoderTask(cacheKey, listener, downloadRequest).executeOnExecutor(mCacheExecutor);
             return;
         }
         listener.onImageNotFound(this, cacheKey, downloadRequest);
