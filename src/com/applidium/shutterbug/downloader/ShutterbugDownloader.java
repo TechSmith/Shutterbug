@@ -1,12 +1,11 @@
 package com.applidium.shutterbug.downloader;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
 
 import android.os.AsyncTask;
 
@@ -53,23 +52,7 @@ public class ShutterbugDownloader {
 
             @Override
             protected InputStream doInBackground(Void... params) {
-                HttpGet request = new HttpGet(mUrl);
-                request.setHeader("Content-Type", "application/x-www-form-urlencoded");
-
-                try {
-                    URL imageUrl = new URL(mUrl);
-                    HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
-                    connection.setConnectTimeout(TIMEOUT);
-                    connection.setReadTimeout(TIMEOUT);
-                    connection.setInstanceFollowRedirects(true);
-                    InputStream inputStream = connection.getInputStream();
-                    return inputStream;
-                } catch (ClientProtocolException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
+                return getBitmapUsingPath( mUrl );
             }
 
             @Override
@@ -84,6 +67,29 @@ public class ShutterbugDownloader {
                     mListener.onImageDownloadFailure(ShutterbugDownloader.this, mDownloadRequest);
                 }
             }
+            
+            @SuppressWarnings( "resource" )
+            private InputStream getBitmapUsingPath( String pathToImage ) {
+               InputStream in = null;
+               try {
+                  if ( pathToImage.startsWith( File.separator ) ) {
+                     File bitmapFile = new File( pathToImage );
+                     in = new FileInputStream( bitmapFile );
+                  } else {
+                     URL imageUrl = new URL(pathToImage);
+                     HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+                     connection.setConnectTimeout(TIMEOUT);
+                     connection.setReadTimeout(TIMEOUT);
+                     connection.setInstanceFollowRedirects(true);
+                     in = connection.getInputStream();
+                  }
+               } catch ( IOException e ) {
+                  e.printStackTrace();
+               }
+
+               return in;
+            }
+
 
         }.execute();
 
