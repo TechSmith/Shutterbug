@@ -11,12 +11,12 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
 import com.applidium.shutterbug.cache.DiskLruCache.Editor;
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.utils.DownloadRequest;
+import com.applidium.shutterbug.utils.ShutterbugManager;
 
 public class ImageCache {
     public interface ImageCacheListener {
@@ -142,12 +142,7 @@ public class ImageCache {
             try {
                 Snapshot snapshot = mDiskCache.get(mCacheKey);
                 if (snapshot != null) {
-                    try {
-                        return BitmapFactory.decodeStream(snapshot.getInputStream(0));
-                    } catch (OutOfMemoryError e) {
-                        e.printStackTrace();
-                        return null;
-                    }
+                    return ShutterbugManager.getSampledBitmapFromStream(snapshot.getInputStream(0));
                 } else {
                     return null;
                 }

@@ -65,9 +65,9 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
     @Override
     public void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url) {
-        if (mScaleImage) {
+        if (mScaleImage && getWidth() > 0 && getHeight() > 0) {
             setImageBitmap(null);
-            new DownloadImageTask( getWidth(), getHeight(), bitmap ).execute();
+            new ScaleImageTask(getWidth(), getHeight(), bitmap).execute();
         } else {
             setImageBitmap(bitmap);
         }
@@ -84,19 +84,19 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         }
     }
 
-    public class DownloadImageTask extends AsyncTask<Void, Void, Bitmap> {
+    public class ScaleImageTask extends AsyncTask<Void, Void, Bitmap> {
        protected int                      mMaxWidth;
        protected int                      mMaxHeight;
        protected Bitmap mBitmap;
        
-       public DownloadImageTask( int maxWidth, int maxHeight, Bitmap bitmap ) {
+       public ScaleImageTask( int maxWidth, int maxHeight, Bitmap bitmap ) {
           mMaxWidth = maxWidth;
           mMaxHeight = maxHeight;
           mBitmap = bitmap;
        }
 
        protected Bitmap doInBackground( Void... args ) {
-          Bitmap thumbnail;
+          Bitmap thumbnail = null;
           if ( isCancelled() || mBitmap == null ) { return null; }
 
           if ( mMaxWidth <= 0 && mMaxHeight <= 0 ) {
@@ -115,11 +115,18 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
              float scale = Math.min( scaleX, scaleY );
 
-             thumbnail = Bitmap.createScaledBitmap(
-                   mBitmap,
-                   Math.round( mBitmap.getWidth() * scale ),
-                   Math.round( mBitmap.getHeight() * scale ),
-                   false );
+             for (int i = 0; i < 3; i++) {
+                try {
+                   thumbnail = Bitmap.createScaledBitmap(
+                         mBitmap,
+                         Math.round( mBitmap.getWidth() * scale ),
+                         Math.round( mBitmap.getHeight() * scale ),
+                         false );
+                   break;
+                } catch (OutOfMemoryError e) {
+                   System.gc();
+                }
+             }
           }
           
           return thumbnail;

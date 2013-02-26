@@ -159,11 +159,8 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             Snapshot cachedSnapshot = sharedImageCache.storeToDisk(params[0], cacheKey);
             Bitmap bitmap = null;
             if (cachedSnapshot != null) {
-                try {
-                    bitmap = BitmapFactory.decodeStream(cachedSnapshot.getInputStream(0));
-                } catch (OutOfMemoryError e) {
-                    e.printStackTrace();
-                }
+                bitmap = getSampledBitmapFromStream(cachedSnapshot.getInputStream(0));
+
                 if (bitmap != null) {
                     sharedImageCache.storeToMemory(bitmap, cacheKey);
                 }
@@ -218,5 +215,19 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             }
         }
 
+    }
+    
+    public static Bitmap getSampledBitmapFromStream(InputStream inStream) {
+       Bitmap bitmap = null;
+       for (int i = 0; i < 3; i++) {
+          try {
+             bitmap = BitmapFactory.decodeStream(inStream);
+             break;
+          } catch (OutOfMemoryError e) {
+             System.gc();
+          }
+       }
+
+       return bitmap;
     }
 }
