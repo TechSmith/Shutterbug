@@ -1,14 +1,16 @@
 package com.applidium.shutterbug.utils;
 
+import java.lang.ref.WeakReference;
+
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
 
 public class DownloadRequest {
     private String                    mUrl;
-    private ShutterbugManagerListener mListener;
+    private WeakReference<ShutterbugManagerListener> mListener;
 
     public DownloadRequest(String url, ShutterbugManagerListener listener) {
         mUrl = url;
-        mListener = listener;
+        mListener = new WeakReference<ShutterbugManagerListener>(listener);
     }
 
     public String getUrl() {
@@ -16,6 +18,6 @@ public class DownloadRequest {
     }
 
     public ShutterbugManagerListener getListener() {
-        return mListener;
+        return mListener.get();
     }
 }
