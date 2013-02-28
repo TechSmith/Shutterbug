@@ -87,6 +87,16 @@ public class ImageCache {
         }
         listener.onImageNotFound(this, cacheKey, downloadRequest);
     }
+    
+    public void remove(String cacheKey) {
+        mMemoryCache.remove(cacheKey);
+
+        try {
+            mDiskCache.remove(cacheKey);
+        } catch ( IOException e ) {
+            e.printStackTrace();
+        }
+    }
 
     public Snapshot storeToDisk(InputStream inputStream, String cacheKey) {
         try {

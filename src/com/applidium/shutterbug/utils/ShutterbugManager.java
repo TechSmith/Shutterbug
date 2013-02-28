@@ -59,6 +59,10 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         mCacheUrls.add(url);
         ImageCache.getSharedImageCache(mContext).queryCache(getCacheKey(url), this, new DownloadRequest(url, listener));
     }
+    
+    public void remove(String url) {
+       ImageCache.getSharedImageCache(mContext).remove(getCacheKey(url));
+    }
 
     private String getCacheKey(String url) {
         try {
