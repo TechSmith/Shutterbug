@@ -3,6 +3,10 @@ package com.applidium.shutterbug;
 import android.R;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
@@ -13,7 +17,8 @@ import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
 
 public class FetchableImageView extends ImageView implements ShutterbugManagerListener {
-    private boolean mScaleImage = false;
+    private boolean  mGreyScale = false;
+    private boolean  mScaleImage = false;
     private Drawable mFailureDrawable;
     
     public interface FetchableImageViewListener {
@@ -48,10 +53,15 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     public void setImage(String url, boolean scaleImageToView, int placeholderDrawableId) {
         setImage(url, scaleImageToView, getContext().getResources().getDrawable(placeholderDrawableId), null);
     }
-
+    
     public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable) {
+      setImage( url, scaleImageToView, placeholderDrawable, failureDrawable, false );
+    }
+
+    public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable, boolean greyScale) {
         mScaleImage = scaleImageToView;
         mFailureDrawable = failureDrawable;
+      mGreyScale = greyScale;
         final ShutterbugManager manager = ShutterbugManager.getSharedImageManager(getContext());
         manager.cancel(this);
         if (placeholderDrawable != null) {
@@ -72,7 +82,11 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
             setImageBitmap(null);
             new ScaleImageTask(getWidth(), getHeight(), bitmap).execute();
         } else {
-            setImageBitmap(bitmap);
+            if (mGreyScale) {
+               setImageBitmap(getGrayscaleBitmap(bitmap));
+            } else {
+               setImageBitmap(bitmap);
+            }
         }
         requestLayout();
         if (mListener != null) {
@@ -139,7 +153,26 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
        }
        
        protected void onPostExecute(Bitmap scaledBitmap) {
-           setImageBitmap(scaledBitmap);
+           if (mGreyScale) {
+              setImageBitmap(getGrayscaleBitmap(scaledBitmap));
+           } else {
+              setImageBitmap(scaledBitmap);
+           }
        }
+    }
+    
+    static public Bitmap getGrayscaleBitmap(Bitmap bmpOriginal) {
+       int height = bmpOriginal.getHeight();
+       int width  = bmpOriginal.getWidth();
+
+       Bitmap bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+       Canvas c = new Canvas(bmpGrayscale);
+       Paint paint = new Paint();
+       ColorMatrix cm = new ColorMatrix();
+       cm.setSaturation(0);
+       ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
+       paint.setColorFilter(f);
+       c.drawBitmap(bmpOriginal, 0, 0, paint);
+       return bmpGrayscale;
     }
 }
