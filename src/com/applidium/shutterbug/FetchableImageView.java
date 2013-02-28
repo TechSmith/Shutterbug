@@ -14,6 +14,7 @@ import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListene
 
 public class FetchableImageView extends ImageView implements ShutterbugManagerListener {
     private boolean mScaleImage = false;
+    private Drawable mFailureDrawable;
     
     public interface FetchableImageViewListener {
         void onImageFetched(Bitmap bitmap, String url);
@@ -36,19 +37,21 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     }
 
     public void setImage(String url) {
-        setImage(url, false, new ColorDrawable(getContext().getResources().getColor(R.color.transparent)));
+        Drawable transDrawable = new ColorDrawable(getContext().getResources().getColor(R.color.transparent));
+        setImage(url, false, transDrawable, null);
     }
     
     public void setImage(String url, boolean scaleImageToView) {
-        setImage(url, scaleImageToView, null);
+        setImage(url, scaleImageToView, null, null);
     }
 
     public void setImage(String url, boolean scaleImageToView, int placeholderDrawableId) {
-        setImage(url, scaleImageToView, getContext().getResources().getDrawable(placeholderDrawableId));
+        setImage(url, scaleImageToView, getContext().getResources().getDrawable(placeholderDrawableId), null);
     }
 
-    public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable) {
+    public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable) {
         mScaleImage = scaleImageToView;
+        mFailureDrawable = failureDrawable;
         final ShutterbugManager manager = ShutterbugManager.getSharedImageManager(getContext());
         manager.cancel(this);
         if (placeholderDrawable != null) {
@@ -81,6 +84,9 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     public void onImageFailure(ShutterbugManager imageManager, String url) {
         if (mListener != null) {
             mListener.onImageFailure(url);
+        }
+        if (mFailureDrawable != null) {
+           setImageDrawable(mFailureDrawable);
         }
     }
 
