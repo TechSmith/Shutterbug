@@ -8,6 +8,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import android.app.ActivityManager;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Bitmap;
@@ -114,6 +115,24 @@ public class ImageCache {
 
     public void storeToMemory(Bitmap bitmap, String cacheKey) {
         mMemoryCache.put(cacheKey, bitmap);
+    }
+    
+    public void onTrimMemory(int level) {
+       if (mMemoryCache != null) {
+          if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) { // 60
+             // Nearing middle of list of cached background apps
+             mMemoryCache.evictAll();
+          } else if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) { // 40
+             // Entering list of cached background apps
+             mMemoryCache.trimToSize(mMemoryCache.size() / 2);
+          }
+       }
+    }
+    
+    public void onLowMemory() {
+       if (mMemoryCache != null) {
+          mMemoryCache.evictAll();
+       }
     }
 
     public void clear() {
