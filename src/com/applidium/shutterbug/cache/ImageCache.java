@@ -17,7 +17,7 @@ import android.os.AsyncTask;
 import com.applidium.shutterbug.cache.DiskLruCache.Editor;
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.utils.DownloadRequest;
-import com.applidium.shutterbug.utils.ShutterbugManager;
+import com.techsmith.utilities.Bitmaps;
 
 public class ImageCache {
     public interface ImageCacheListener {
@@ -171,7 +171,7 @@ public class ImageCache {
             try {
                 Snapshot snapshot = mDiskCache.get(mCacheKey);
                 if (snapshot != null) {
-                    return ShutterbugManager.getSampledBitmapFromStream(snapshot.getInputStream(0));
+                    return Bitmaps.safeDecodeStream(snapshot.getInputStream(0));
                 } else {
                     return null;
                 }

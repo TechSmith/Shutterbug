@@ -15,6 +15,7 @@ import android.widget.ImageView;
 
 import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
+import com.techsmith.utilities.Bitmaps;
 
 public class FetchableImageView extends ImageView implements ShutterbugManagerListener {
     private boolean  mGreyScale = false;
@@ -122,31 +123,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
           if ( mMaxWidth <= 0 && mMaxHeight <= 0 ) {
              thumbnail = mBitmap;
           } else {
-             float scaleX = Float.MAX_VALUE;
-             float scaleY = Float.MAX_VALUE;
-
-             if ( mMaxWidth > 0 ) {
-                scaleX = (float) mMaxWidth / (float) mBitmap.getWidth();
-             }
-
-             if ( mMaxHeight > 0 ) {
-                scaleY = (float) mMaxHeight / (float) mBitmap.getHeight();
-             }
-
-             float scale = Math.min( scaleX, scaleY );
-
-             for (int i = 0; i < 3; i++) {
-                try {
-                   thumbnail = Bitmap.createScaledBitmap(
-                         mBitmap,
-                         Math.round( mBitmap.getWidth() * scale ),
-                         Math.round( mBitmap.getHeight() * scale ),
-                         false );
-                   break;
-                } catch (OutOfMemoryError e) {
-                   System.gc();
-                }
-             }
+             thumbnail = Bitmaps.safeCreateScaledBitmap( mBitmap, mMaxWidth, mMaxHeight );
           }
           
           return thumbnail;

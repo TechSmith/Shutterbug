@@ -10,7 +10,6 @@ import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
@@ -18,6 +17,7 @@ import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.cache.ImageCache.ImageCacheListener;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader.ShutterbugDownloaderListener;
+import com.techsmith.utilities.Bitmaps;
 
 public class ShutterbugManager implements ImageCacheListener, ShutterbugDownloaderListener {
     public interface ShutterbugManagerListener {
@@ -163,7 +163,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             Snapshot cachedSnapshot = sharedImageCache.storeToDisk(params[0], cacheKey);
             Bitmap bitmap = null;
             if (cachedSnapshot != null) {
-                bitmap = getSampledBitmapFromStream(cachedSnapshot.getInputStream(0));
+                bitmap = Bitmaps.safeDecodeStream(cachedSnapshot.getInputStream(0));
 
                 if (bitmap != null) {
                     sharedImageCache.storeToMemory(bitmap, cacheKey);
@@ -219,19 +219,5 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             }
         }
 
-    }
-    
-    public static Bitmap getSampledBitmapFromStream(InputStream inStream) {
-       Bitmap bitmap = null;
-       for (int i = 0; i < 3; i++) {
-          try {
-             bitmap = BitmapFactory.decodeStream(inStream);
-             break;
-          } catch (OutOfMemoryError e) {
-             System.gc();
-          }
-       }
-
-       return bitmap;
     }
 }
