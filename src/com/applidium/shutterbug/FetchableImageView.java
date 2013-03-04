@@ -1,6 +1,5 @@
 package com.applidium.shutterbug;
 
-import android.R;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -43,7 +42,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     }
 
     public void setImage(String url) {
-        Drawable transDrawable = new ColorDrawable(getContext().getResources().getColor(R.color.transparent));
+        Drawable transDrawable = new ColorDrawable(getContext().getResources().getColor(android.R.color.transparent));
         setImage(url, false, transDrawable, null);
     }
     
@@ -62,7 +61,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable, boolean greyScale) {
         mScaleImage = scaleImageToView;
         mFailureDrawable = failureDrawable;
-      mGreyScale = greyScale;
+        mGreyScale = greyScale;
         final ShutterbugManager manager = ShutterbugManager.getSharedImageManager(getContext());
         manager.cancel(this);
         if (placeholderDrawable != null) {
