@@ -20,6 +20,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     private boolean  mGreyScale = false;
     private boolean  mScaleImage = false;
     private Drawable mFailureDrawable;
+    private String   mCurrentUrl;
     
     public interface FetchableImageViewListener {
         void onImageFetched(Bitmap bitmap, String url);
@@ -59,16 +60,18 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     }
 
     public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable, boolean greyScale) {
-        mScaleImage = scaleImageToView;
-        mFailureDrawable = failureDrawable;
-        mGreyScale = greyScale;
-        final ShutterbugManager manager = ShutterbugManager.getSharedImageManager(getContext());
-        manager.cancel(this);
-        if (placeholderDrawable != null) {
-           setImageDrawable(placeholderDrawable);
-        }
-        if (url != null) {
-            manager.download(url, this);
+        if (!url.equals(mCurrentUrl)) {
+           mScaleImage = scaleImageToView;
+           mFailureDrawable = failureDrawable;
+           mGreyScale = greyScale;
+           final ShutterbugManager manager = ShutterbugManager.getSharedImageManager(getContext());
+           manager.cancel(this);
+           if (placeholderDrawable != null) {
+              setImageDrawable(placeholderDrawable);
+           }
+           if (url != null) {
+               manager.download(url, this);
+           }
         }
     }
 
@@ -87,6 +90,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
             } else {
                setImageBitmap(bitmap);
             }
+            mCurrentUrl = url;
         }
         requestLayout();
         if (mListener != null) {
