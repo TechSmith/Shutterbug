@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -66,26 +69,56 @@ public class ImageCache {
         return sImageCache;
     }
 
-    public void queryCache(String cacheKey, ImageCacheListener listener, DownloadRequest downloadRequest) {
-        if (cacheKey == null) {
-            listener.onImageNotFound(this, cacheKey, downloadRequest);
+    public void queryCache(String url, ImageCacheListener listener, DownloadRequest downloadRequest) {
+        if (url == null) {
+            listener.onImageNotFound(this, url, downloadRequest);
             return;
+        }
+        
+        String fullSizeCacheKey = getCacheKey(url);
+        String scaledCacheKey = "";
+        
+        int desiredWidth = downloadRequest.getListener().getDesiredWidth();
+        int desiredHeight = downloadRequest.getListener().getDesiredHeight();
+        
+        if ( desiredWidth > 0 && desiredHeight > 0 ) {
+           scaledCacheKey = getCacheKey(url, desiredWidth, desiredHeight);
+           
+           Bitmap scaledBitmap = mMemoryCache.get(scaledCacheKey);
+           if (scaledBitmap != null) {
+              listener.onImageFound(this, scaledBitmap, url, downloadRequest);
+              return;
+           }
         }
 
         // First check the in-memory cache...
-        Bitmap cachedBitmap = mMemoryCache.get(cacheKey);
+        Bitmap cachedBitmap = mMemoryCache.get(fullSizeCacheKey);
 
         if (cachedBitmap != null) {
             // ...notify listener immediately, no need to go async
-            listener.onImageFound(this, cachedBitmap, cacheKey, downloadRequest);
+            listener.onImageFound(this, cachedBitmap, url, downloadRequest);
             return;
         }
 
         if (mDiskCache != null) {
-            new BitmapDecoderTask(cacheKey, listener, downloadRequest).executeOnExecutor(mCacheExecutor);
+            new BitmapDecoderTask(url, listener, downloadRequest).executeOnExecutor(mCacheExecutor);
             return;
         }
-        listener.onImageNotFound(this, cacheKey, downloadRequest);
+        listener.onImageNotFound(this, url, downloadRequest);
+    }
+    
+
+    public static String getCacheKey(String url) {
+        try {
+            return URLEncoder.encode(url, "US-ASCII");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public static String getCacheKey(String url, int imageWidth, int imageHeight) {
+       return getCacheKey(String.format(Locale.getDefault(), "%s_%d_%d", url, imageWidth, imageHeight) );
     }
     
     public void remove(String cacheKey) {
@@ -156,12 +189,12 @@ public class ImageCache {
     }
 
     private class BitmapDecoderTask extends AsyncTask<Void, Void, Bitmap> {
-        private String             mCacheKey;
+        private String mUrl;
         private ImageCacheListener mListener;
         private DownloadRequest    mDownloadRequest;
 
-        public BitmapDecoderTask(String cacheKey, ImageCacheListener listener, DownloadRequest downloadRequest) {
-            mCacheKey = cacheKey;
+        public BitmapDecoderTask(String url, ImageCacheListener listener, DownloadRequest downloadRequest) {
+            mUrl = url;
             mListener = listener;
             mDownloadRequest = downloadRequest;
         }
@@ -169,12 +202,21 @@ public class ImageCache {
         @Override
         protected Bitmap doInBackground(Void... params) {
             try {
-                Snapshot snapshot = mDiskCache.get(mCacheKey);
+                String scaledCacheKey = getCacheKey(
+                      mUrl,
+                      mDownloadRequest.getListener().getDesiredWidth(),
+                      mDownloadRequest.getListener().getDesiredHeight());
+                Snapshot snapshot = mDiskCache.get(scaledCacheKey);
+                if (snapshot != null) {
+                   return Bitmaps.safeDecodeStream(snapshot.getInputStream(0));
+                }
+                
+                snapshot = mDiskCache.get(getCacheKey(mUrl));
                 if (snapshot != null) {
                     return Bitmaps.safeDecodeStream(snapshot.getInputStream(0));
-                } else {
-                    return null;
                 }
+                
+                return null;
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -184,10 +226,10 @@ public class ImageCache {
         @Override
         protected void onPostExecute(Bitmap result) {
             if (result != null) {
-                storeToMemory(result, mCacheKey);
-                mListener.onImageFound(ImageCache.this, result, mCacheKey, mDownloadRequest);
+                storeToMemory(result, getCacheKey(mUrl));
+                mListener.onImageFound(ImageCache.this, result, mUrl, mDownloadRequest);
             } else {
-                mListener.onImageNotFound(ImageCache.this, mCacheKey, mDownloadRequest);
+                mListener.onImageNotFound(ImageCache.this, mUrl, mDownloadRequest);
             }
         }
 

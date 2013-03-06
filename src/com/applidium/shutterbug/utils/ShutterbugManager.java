@@ -1,8 +1,6 @@
 package com.applidium.shutterbug.utils;
 
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +22,10 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url);
 
         void onImageFailure(ShutterbugManager imageManager, String url);
+
+        int getDesiredWidth();
+        
+        int getDesiredHeight();
     }
 
     private static ShutterbugManager          sImageManager;
@@ -57,20 +59,11 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
 
         mCacheListeners.add(listener);
         mCacheUrls.add(url);
-        ImageCache.getSharedImageCache(mContext).queryCache(getCacheKey(url), this, new DownloadRequest(url, listener));
+        ImageCache.getSharedImageCache(mContext).queryCache(url, this, new DownloadRequest(url, listener));
     }
     
     public void remove(String url) {
-       ImageCache.getSharedImageCache(mContext).remove(getCacheKey(url));
-    }
-
-    private String getCacheKey(String url) {
-        try {
-            return URLEncoder.encode(url, "US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
+       ImageCache.getSharedImageCache(mContext).remove(url);
     }
 
     private int getListenerIndex(ShutterbugManagerListener listener, String url) {
@@ -158,16 +151,17 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         @Override
         protected Bitmap doInBackground(InputStream... params) {
             final ImageCache sharedImageCache = ImageCache.getSharedImageCache(mContext);
-            final String cacheKey = getCacheKey(mDownloadRequest.getUrl());
+            final String cacheKey = ImageCache.getCacheKey(mDownloadRequest.getUrl());
             // Store the image in the cache
             Snapshot cachedSnapshot = sharedImageCache.storeToDisk(params[0], cacheKey);
             Bitmap bitmap = null;
             if (cachedSnapshot != null) {
                 bitmap = Bitmaps.safeDecodeStream(cachedSnapshot.getInputStream(0));
 
-                if (bitmap != null) {
-                    sharedImageCache.storeToMemory(bitmap, cacheKey);
-                }
+// Disabled for performance reasons. The caller of this AsyncTask will handling caching.
+//                if (bitmap != null) {
+//                    sharedImageCache.storeToMemory(bitmap, cacheKey);
+//                }
             }
             return bitmap;
         }

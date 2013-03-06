@@ -1,7 +1,12 @@
 package com.applidium.shutterbug;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
@@ -12,6 +17,7 @@ import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
+import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
 import com.techsmith.utilities.Bitmaps;
@@ -81,16 +87,21 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
     @Override
     public void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url) {
-        if (mScaleImage && getWidth() > 0 && getHeight() > 0) {
+        boolean imageSizeIsDifferentThanViewSize = getWidth() != bitmap.getWidth() && getHeight() != bitmap.getHeight();
+        
+        if (mScaleImage && getWidth() > 0 && getHeight() > 0 && imageSizeIsDifferentThanViewSize) {
             setImageBitmap(null);
-            new ScaleImageTask(getWidth(), getHeight(), bitmap).execute();
+            new ScaleImageTask(url, getWidth(), getHeight(), bitmap).execute();
         } else {
             if (mGreyScale) {
-               setImageBitmap(getGrayscaleBitmap(bitmap));
+               bitmap = getGrayscaleBitmap(bitmap);
+               setImageBitmap(bitmap);
             } else {
                setImageBitmap(bitmap);
             }
             mCurrentUrl = url;
+
+            ImageCache.getSharedImageCache(getContext()).storeToMemory(bitmap, ImageCache.getCacheKey(url));
         }
         requestLayout();
         if (mListener != null) {
@@ -109,35 +120,44 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     }
 
     public class ScaleImageTask extends AsyncTask<Void, Void, Bitmap> {
+       protected String                   mUrl;
        protected int                      mMaxWidth;
        protected int                      mMaxHeight;
-       protected Bitmap mBitmap;
+       protected Bitmap                   mBitmap;
        
-       public ScaleImageTask( int maxWidth, int maxHeight, Bitmap bitmap ) {
+       public ScaleImageTask(String url, int maxWidth, int maxHeight, Bitmap bitmap) {
+          mUrl = url;
           mMaxWidth = maxWidth;
           mMaxHeight = maxHeight;
           mBitmap = bitmap;
        }
 
-       protected Bitmap doInBackground( Void... args ) {
+       protected Bitmap doInBackground(Void... args) {
           Bitmap thumbnail = null;
-          if ( isCancelled() || mBitmap == null ) { return null; }
+          if (isCancelled() || mBitmap == null) { return null; }
 
-          if ( mMaxWidth <= 0 && mMaxHeight <= 0 ) {
+          if (mMaxWidth <= 0 && mMaxHeight <= 0) {
              thumbnail = mBitmap;
           } else {
-             thumbnail = Bitmaps.safeCreateScaledBitmap( mBitmap, mMaxWidth, mMaxHeight );
+             thumbnail = Bitmaps.safeCreateScaledBitmap(mBitmap, mMaxWidth, mMaxHeight);
           }
           
+          ImageCache imageCache = ImageCache.getSharedImageCache( getContext() );
+          imageCache.storeToMemory( thumbnail, ImageCache.getCacheKey( mUrl, getWidth(), getHeight() ) );
+
+          ByteArrayOutputStream stream = new ByteArrayOutputStream();
+          thumbnail.compress( CompressFormat.JPEG, 100, stream );
+          InputStream inStream = new ByteArrayInputStream( stream.toByteArray() );
+          imageCache.storeToDisk( inStream, ImageCache.getCacheKey( mUrl, getWidth(), getHeight() ) );
+
           return thumbnail;
        }
        
-       protected void onPostExecute(Bitmap scaledBitmap) {
+       protected void onPostExecute(Bitmap scaledBitmap) {           
            if (mGreyScale) {
-              setImageBitmap(getGrayscaleBitmap(scaledBitmap));
-           } else {
-              setImageBitmap(scaledBitmap);
+              scaledBitmap = getGrayscaleBitmap(scaledBitmap);
            }
+           setImageBitmap(scaledBitmap);
        }
     }
     
@@ -154,5 +174,15 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
        paint.setColorFilter(f);
        c.drawBitmap(bmpOriginal, 0, 0, paint);
        return bmpGrayscale;
+    }
+    
+    @Override
+    public int getDesiredHeight() {
+       return getHeight();
+    }
+
+    @Override
+    public int getDesiredWidth() {
+       return getWidth();
     }
 }
