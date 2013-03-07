@@ -65,6 +65,10 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     public void remove(String url) {
        ImageCache.getSharedImageCache(mContext).remove(url);
     }
+    
+    public List<Bitmap> removeByPrefix(String urlPrefix) {
+       return ImageCache.getSharedImageCache(mContext).removeByPrefix(urlPrefix);
+    }
 
     private int getListenerIndex(ShutterbugManagerListener listener, String url) {
         for (int index = 0; index < mCacheListeners.size(); index++) {

@@ -11,7 +11,9 @@ package com.applidium.shutterbug.cache;
  * governing permissions and limitations under the License.
  */
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -185,6 +187,34 @@ public class LruCache<K, V> {
         }
 
         return previous;
+    }
+    
+    @SuppressWarnings( "unchecked" )
+    public final List<V> removeByPrefix(K keyPrefix) {
+       if (!(keyPrefix instanceof String)) {
+          throw new IllegalStateException(getClass().getName() + ".removeByPrefix() can only be used with String keys");
+       }
+       
+       String keyPrefixString = (String)keyPrefix;
+       
+       ArrayList<String> keysToRemove = new ArrayList<String>();
+       ArrayList<V> valuesRemoved = new ArrayList<V>();
+       
+       synchronized(this) {
+          for (K key : map.keySet()) {
+             String keyString = (String)key;
+             if (keyString.startsWith(keyPrefixString)) {
+                keysToRemove.add(keyString);
+             }
+          }
+          
+          for ( String key : keysToRemove) {
+             V val = remove((K)key);
+             valuesRemoved.add(val);
+          }
+       }
+       
+       return valuesRemoved;
     }
 
     /**

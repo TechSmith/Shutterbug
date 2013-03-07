@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -129,6 +130,14 @@ public class ImageCache {
         } catch ( IOException e ) {
             e.printStackTrace();
         }
+    }
+    
+    public List<Bitmap> removeByPrefix(String cacheKeyPrefix) {
+       List<Bitmap> bitmaps = mMemoryCache.removeByPrefix(getCacheKey(cacheKeyPrefix));
+       
+       // TODO: Try to remove from disk cache
+       
+       return bitmaps;
     }
 
     public Snapshot storeToDisk(InputStream inputStream, String cacheKey) {
