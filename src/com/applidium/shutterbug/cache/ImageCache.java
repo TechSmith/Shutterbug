@@ -238,7 +238,7 @@ public class ImageCache {
     private void openDiskCache() {
         File directory;
         if (android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED)) {
-            directory = new File(android.os.Environment.getExternalStorageDirectory(), "Applidium Image Cache");
+            directory = new File(android.os.Environment.getExternalStorageDirectory(), "CoachsEye Image Cache");
         } else {
             directory = mContext.getCacheDir();
         }
