@@ -147,10 +147,12 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
              ImageCache imageCache = ImageCache.getSharedImageCache(getContext());
              imageCache.storeToMemory(thumbnail, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
              
-             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-             thumbnail.compress(CompressFormat.JPEG, 100, stream);
-             InputStream inStream = new ByteArrayInputStream(stream.toByteArray());
-             imageCache.storeToDisk(inStream, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
+             if (mUrl.startsWith("http")) {
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                thumbnail.compress(CompressFormat.JPEG, 100, stream);
+                InputStream inStream = new ByteArrayInputStream(stream.toByteArray());
+                imageCache.storeToDisk(inStream, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
+             }
           } else {
              XLog.x(this, "Image from %s was null", mUrl);
           }

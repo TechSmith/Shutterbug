@@ -156,16 +156,20 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         protected Bitmap doInBackground(InputStream... params) {
             final ImageCache sharedImageCache = ImageCache.getSharedImageCache(mContext);
             final String cacheKey = ImageCache.getCacheKey(mDownloadRequest.getUrl());
-            // Store the image in the cache
-            Snapshot cachedSnapshot = sharedImageCache.storeToDisk(params[0], cacheKey);
             Bitmap bitmap = null;
-            if (cachedSnapshot != null) {
-                bitmap = Bitmaps.safeDecodeStream(cachedSnapshot.getInputStream(0));
-
-// Disabled for performance reasons. The caller of this AsyncTask will handling caching.
-//                if (bitmap != null) {
-//                    sharedImageCache.storeToMemory(bitmap, cacheKey);
-//                }
+            if (mDownloadRequest.getUrl().startsWith("http")) {
+               // Store the image in the cache
+               Snapshot cachedSnapshot = sharedImageCache.storeToDisk(params[0], cacheKey);
+               if (cachedSnapshot != null) {
+                   bitmap = Bitmaps.safeDecodeStream(cachedSnapshot.getInputStream(0));
+   
+                   // Disabled for performance reasons. The caller of this AsyncTask will handling caching.
+//                   if (bitmap != null) {
+//                       sharedImageCache.storeToMemory(bitmap, cacheKey);
+//                   }
+               }
+            } else {
+               bitmap = Bitmaps.safeDecodeStream(params[0]);
             }
             return bitmap;
         }
