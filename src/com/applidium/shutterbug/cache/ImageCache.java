@@ -123,10 +123,10 @@ public class ImageCache {
     }
     
     public void remove(String cacheKey) {
-        mMemoryCache.remove(cacheKey);
+        mMemoryCache.remove(getCacheKey(cacheKey));
 
         try {
-            mDiskCache.remove(cacheKey);
+            mDiskCache.remove(getCacheKey(cacheKey));
         } catch ( IOException e ) {
             e.printStackTrace();
         }
