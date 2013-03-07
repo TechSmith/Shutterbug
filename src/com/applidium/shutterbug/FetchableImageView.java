@@ -21,6 +21,7 @@ import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
 import com.techsmith.utilities.Bitmaps;
+import com.techsmith.utilities.XLog;
 
 public class FetchableImageView extends ImageView implements ShutterbugManagerListener {
     private boolean  mGreyScale = false;
@@ -142,13 +143,18 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
              thumbnail = Bitmaps.safeCreateScaledBitmapForCenterCrop(mBitmap, mMaxWidth, mMaxHeight);
           }
           
-          ImageCache imageCache = ImageCache.getSharedImageCache( getContext() );
-          imageCache.storeToMemory( thumbnail, ImageCache.getCacheKey( mUrl, getWidth(), getHeight() ) );
+          if (thumbnail != null) {
+             ImageCache imageCache = ImageCache.getSharedImageCache(getContext());
+             imageCache.storeToMemory(thumbnail, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
+             
+             ByteArrayOutputStream stream = new ByteArrayOutputStream();
+             thumbnail.compress(CompressFormat.JPEG, 100, stream);
+             InputStream inStream = new ByteArrayInputStream(stream.toByteArray());
+             imageCache.storeToDisk(inStream, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
+          } else {
+             XLog.x(this, "Image from %s was null", mUrl);
+          }
 
-          ByteArrayOutputStream stream = new ByteArrayOutputStream();
-          thumbnail.compress( CompressFormat.JPEG, 100, stream );
-          InputStream inStream = new ByteArrayInputStream( stream.toByteArray() );
-          imageCache.storeToDisk( inStream, ImageCache.getCacheKey( mUrl, getWidth(), getHeight() ) );
 
           return thumbnail;
        }
