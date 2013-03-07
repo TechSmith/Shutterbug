@@ -139,7 +139,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
           if (mMaxWidth <= 0 && mMaxHeight <= 0) {
              thumbnail = mBitmap;
           } else {
-             thumbnail = Bitmaps.safeCreateScaledBitmap(mBitmap, mMaxWidth, mMaxHeight);
+             thumbnail = Bitmaps.safeCreateScaledBitmapForCenterCrop(mBitmap, mMaxWidth, mMaxHeight);
           }
           
           ImageCache imageCache = ImageCache.getSharedImageCache( getContext() );
