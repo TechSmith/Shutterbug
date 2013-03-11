@@ -173,7 +173,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
        int height = bmpOriginal.getHeight();
        int width  = bmpOriginal.getWidth();
 
-       Bitmap bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+       Bitmap bmpGrayscale = Bitmaps.safeCreateBitmap(width, height, Bitmap.Config.RGB_565);
        Canvas c = new Canvas(bmpGrayscale);
        Paint paint = new Paint();
        ColorMatrix cm = new ColorMatrix();
