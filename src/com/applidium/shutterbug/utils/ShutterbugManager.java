@@ -181,8 +181,8 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                BitmapFactory.decodeStream(params[0], null, inOptions);
                
                int scale = 1;
-               while (inOptions.outWidth / scale / 2 >= mViewWidth && inOptions.outHeight / scale / 2 >= mViewHeight) {
-                  scale *= 2;
+               while ((inOptions.outWidth / scale / 2) >= mViewWidth && (inOptions.outHeight / scale / 2) >= mViewHeight) {
+                  scale <<= 1;
                }
                
                try {
