@@ -108,6 +108,13 @@ public class ImageCache {
         listener.onImageNotFound(this, url, downloadRequest);
     }
     
+    public boolean hasKeyInMemory(String url) {
+       return mMemoryCache.get(getCacheKey(url)) != null;
+    }
+    
+    public boolean hasKeyInMemory(String url, int preferredWidth, int preferredHeight) {
+       return mMemoryCache.get(getCacheKey(url, preferredWidth, preferredHeight)) != null;
+    }
 
     public static String getCacheKey(String url) {
         try {
