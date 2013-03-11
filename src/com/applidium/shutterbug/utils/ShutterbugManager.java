@@ -1,5 +1,7 @@
 package com.applidium.shutterbug.utils;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,6 +10,7 @@ import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
@@ -146,10 +149,14 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     private class InputStreamHandlingTask extends AsyncTask<InputStream, Void, Bitmap> {
         ShutterbugDownloader mDownloader;
         DownloadRequest      mDownloadRequest;
+        int                  mViewWidth;
+        int                  mViewHeight;
 
         InputStreamHandlingTask(ShutterbugDownloader downloader, DownloadRequest downloadRequest) {
             mDownloader = downloader;
             mDownloadRequest = downloadRequest;
+            mViewWidth = downloadRequest.getListener().getDesiredWidth();
+            mViewHeight = downloadRequest.getListener().getDesiredHeight();
         }
 
         @Override
@@ -169,7 +176,21 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
 //                   }
                }
             } else {
-               bitmap = Bitmaps.safeDecodeStream(params[0]);
+               BitmapFactory.Options inOptions = new BitmapFactory.Options();
+               inOptions.inJustDecodeBounds = true;
+               BitmapFactory.decodeStream(params[0], null, inOptions);
+               
+               int scale = 1;
+               while (inOptions.outWidth / scale / 2 >= mViewWidth && inOptions.outHeight / scale / 2 >= mViewHeight) {
+                  scale *= 2;
+               }
+               
+               try {
+                  FileInputStream inStream = new FileInputStream(mDownloadRequest.getUrl());
+                  bitmap = Bitmaps.safeDecodeStream(inStream, scale);
+               } catch (IOException e) {
+                  e.printStackTrace();
+               }
             }
             return bitmap;
         }
