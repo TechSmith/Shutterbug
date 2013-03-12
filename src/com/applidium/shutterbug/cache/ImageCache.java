@@ -146,6 +146,10 @@ public class ImageCache {
        
        return bitmaps;
     }
+    
+    public void clearMemoryCache() {
+        mMemoryCache.evictAll();
+    }
 
     public Snapshot storeToDisk(InputStream inputStream, String cacheKey) {
         try {
