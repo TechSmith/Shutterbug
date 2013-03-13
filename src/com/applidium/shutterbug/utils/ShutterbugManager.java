@@ -18,6 +18,7 @@ import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.cache.ImageCache.ImageCacheListener;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader.ShutterbugDownloaderListener;
+import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
 import com.techsmith.utilities.Bitmaps;
 
 public class ShutterbugManager implements ImageCacheListener, ShutterbugDownloaderListener {
@@ -127,7 +128,11 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     @Override
     public void onImageDownloadSuccess(final ShutterbugDownloader downloader, final InputStream inputStream,
             final DownloadRequest downloadRequest) {
-        new InputStreamHandlingTask(downloader, downloadRequest).execute(inputStream);
+
+        ThreadPoolAsyncTaskRunner.runTaskOnPool(
+              ThreadPoolAsyncTaskRunner.THUMBNAIL_THREAD_POOL,
+              new InputStreamHandlingTask(downloader, downloadRequest),
+              inputStream);
     }
 
     @Override
@@ -146,7 +151,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
 
     }
 
-    private class InputStreamHandlingTask extends AsyncTask<InputStream, Void, Bitmap> {
+    private class InputStreamHandlingTask extends AsyncTask<Object, Void, Bitmap> {
         ShutterbugDownloader mDownloader;
         DownloadRequest      mDownloadRequest;
         int                  mViewWidth;
@@ -160,13 +165,14 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         }
 
         @Override
-        protected Bitmap doInBackground(InputStream... params) {
+        protected Bitmap doInBackground(Object... params) {
+            InputStream inStream = (InputStream) params[0];
             final ImageCache sharedImageCache = ImageCache.getSharedImageCache(mContext);
             final String cacheKey = ImageCache.getCacheKey(mDownloadRequest.getUrl());
             Bitmap bitmap = null;
             if (mDownloadRequest.getUrl().startsWith("http")) {
                // Store the image in the cache
-               Snapshot cachedSnapshot = sharedImageCache.storeToDisk(params[0], cacheKey);
+               Snapshot cachedSnapshot = sharedImageCache.storeToDisk(inStream, cacheKey);
                if (cachedSnapshot != null) {
                    bitmap = Bitmaps.safeDecodeStream(cachedSnapshot.getInputStream(0));
    
@@ -178,7 +184,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             } else {
                BitmapFactory.Options inOptions = new BitmapFactory.Options();
                inOptions.inJustDecodeBounds = true;
-               BitmapFactory.decodeStream(params[0], null, inOptions);
+               BitmapFactory.decodeStream(inStream, null, inOptions);
                
                float scale = 1;
                while ((inOptions.outWidth / scale / 2) >= mViewWidth && (inOptions.outHeight / scale / 2) >= mViewHeight) {
@@ -186,8 +192,8 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                }
                
                try {
-                  FileInputStream inStream = new FileInputStream(mDownloadRequest.getUrl());
-                  bitmap = Bitmaps.safeDecodeStream(inStream, (int)scale);
+                  FileInputStream fileInStream = new FileInputStream(mDownloadRequest.getUrl());
+                  bitmap = Bitmaps.safeDecodeStream(fileInStream, (int)scale);
                } catch (IOException e) {
                   e.printStackTrace();
                }
