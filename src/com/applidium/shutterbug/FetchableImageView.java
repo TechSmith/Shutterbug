@@ -104,7 +104,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
             ImageCache.getSharedImageCache(getContext()).storeToMemory(bitmap, ImageCache.getCacheKey(url));
         }
-        requestLayout();
+
         if (mListener != null) {
             mListener.onImageFetched(bitmap, url);
         }
