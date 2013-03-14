@@ -88,9 +88,9 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
     @Override
     public void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url) {
-        boolean imageSizeIsDifferentThanViewSize = getWidth() != bitmap.getWidth() && getHeight() != bitmap.getHeight();
+        boolean imageNeedsToBeRescaled = getWidth() < bitmap.getWidth() && getHeight() < bitmap.getHeight();
         
-        if (mScaleImage && getWidth() > 0 && getHeight() > 0 && imageSizeIsDifferentThanViewSize) {
+        if (mScaleImage && getWidth() > 0 && getHeight() > 0 && imageNeedsToBeRescaled) {
             setImageBitmap(null);
             new ScaleImageTask(url, getWidth(), getHeight(), bitmap).execute();
         } else {
