@@ -159,7 +159,9 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
                 InputStream inStream = new ByteArrayInputStream(stream.toByteArray());
                 Snapshot snapshot = imageCache.storeToDisk(inStream, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
                 IO.closeQuietly( inStream );
-                snapshot.close();
+                if (snapshot != null) {
+                    snapshot.close();
+                }
              }
           } else {
              XLog.x(this, "Image from %s was null", mUrl);
