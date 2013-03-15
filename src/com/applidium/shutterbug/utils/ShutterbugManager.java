@@ -4,9 +4,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -36,13 +37,13 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     private static ShutterbugManager          sImageManager;
 
     private Context                           mContext;
-    private List<String>                      mFailedUrls             = new ArrayList<String>();
-    private List<ShutterbugManagerListener>   mCacheListeners         = new ArrayList<ShutterbugManagerListener>();
-    private List<String>                      mCacheUrls              = new ArrayList<String>();
-    private Map<String, ShutterbugDownloader> mDownloadersMap         = new HashMap<String, ShutterbugDownloader>();
-    private List<DownloadRequest>             mDownloadRequests       = new ArrayList<DownloadRequest>();
-    private List<ShutterbugManagerListener>   mDownloadImageListeners = new ArrayList<ShutterbugManagerListener>();
-    private List<ShutterbugDownloader>        mDownloaders            = new ArrayList<ShutterbugDownloader>();
+    private List<String>                      mFailedUrls             = Collections.synchronizedList( new ArrayList<String>() );
+    private List<ShutterbugManagerListener>   mCacheListeners         = Collections.synchronizedList( new ArrayList<ShutterbugManagerListener>() );
+    private List<String>                      mCacheUrls              = Collections.synchronizedList( new ArrayList<String>() );
+    private Map<String, ShutterbugDownloader> mDownloadersMap         = new ConcurrentHashMap<String, ShutterbugDownloader>();
+    private List<DownloadRequest>             mDownloadRequests       = Collections.synchronizedList( new ArrayList<DownloadRequest>() );
+    private List<ShutterbugManagerListener>   mDownloadImageListeners = Collections.synchronizedList( new ArrayList<ShutterbugManagerListener>() );
+    private List<ShutterbugDownloader>        mDownloaders            = Collections.synchronizedList( new ArrayList<ShutterbugDownloader>() );
 
     final static private int                  LISTENER_NOT_FOUND      = -1;
 
