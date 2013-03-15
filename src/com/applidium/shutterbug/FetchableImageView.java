@@ -21,6 +21,7 @@ import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
+import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
 import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
 import com.techsmith.utilities.XLog;
@@ -94,7 +95,10 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         
         if (mScaleImage && getWidth() > 0 && getHeight() > 0 && imageNeedsToBeRescaled) {
             setImageBitmap(null);
-            new ScaleImageTask(url, getWidth(), getHeight(), bitmap).execute();
+            ThreadPoolAsyncTaskRunner.runTaskOnPool(
+                  ThreadPoolAsyncTaskRunner.THUMBNAIL_THREAD_POOL,
+                  new ScaleImageTask(url, getWidth(), getHeight(), bitmap),
+                  (Object[]) null);
         } else {
             if (mGreyScale) {
                bitmap = getGrayscaleBitmap(bitmap);
@@ -122,7 +126,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         }
     }
 
-    public class ScaleImageTask extends AsyncTask<Void, Void, Bitmap> {
+    public class ScaleImageTask extends AsyncTask<Object, Void, Bitmap> {
        protected String                   mUrl;
        protected int                      mMaxWidth;
        protected int                      mMaxHeight;
@@ -135,7 +139,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
           mBitmap = bitmap;
        }
 
-       protected Bitmap doInBackground(Void... args) {
+       protected Bitmap doInBackground(Object... args) {
           Bitmap thumbnail = null;
           if (isCancelled() || mBitmap == null) { return null; }
 
