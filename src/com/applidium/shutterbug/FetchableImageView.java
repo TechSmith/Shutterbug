@@ -70,7 +70,8 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     }
 
     public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable, boolean greyScale) {
-        if (!url.equals(mCurrentUrl) || !ImageCache.getSharedImageCache(getContext()).hasKeyInMemory(url)) {
+        boolean urlIsCached = ImageCache.getSharedImageCache(getContext()).hasKeyInMemory(url, getWidth(), getHeight());
+        if (!url.equals(mCurrentUrl) || !urlIsCached) {
            mCurrentUrl = url;
            mScaleImage = scaleImageToView;
            mFailureDrawable = failureDrawable;
