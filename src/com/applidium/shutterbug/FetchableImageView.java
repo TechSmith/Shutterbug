@@ -17,9 +17,11 @@ import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
+import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
+import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
 import com.techsmith.utilities.XLog;
 
@@ -151,7 +153,9 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 thumbnail.compress(CompressFormat.JPEG, 100, stream);
                 InputStream inStream = new ByteArrayInputStream(stream.toByteArray());
-                imageCache.storeToDisk(inStream, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
+                Snapshot snapshot = imageCache.storeToDisk(inStream, ImageCache.getCacheKey(mUrl, getWidth(), getHeight()));
+                IO.closeQuietly( inStream );
+                snapshot.close();
              }
           } else {
              XLog.x(this, "Image from %s was null", mUrl);

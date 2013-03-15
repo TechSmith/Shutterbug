@@ -21,6 +21,7 @@ import android.os.AsyncTask;
 import com.applidium.shutterbug.cache.DiskLruCache.Editor;
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.utils.DownloadRequest;
+import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
 
 public class ImageCache {
@@ -223,6 +224,7 @@ public class ImageCache {
 
         @Override
         protected Bitmap doInBackground(Void... params) {
+            InputStream inStream = null;
             try {
                 String scaledCacheKey = getCacheKey(
                       mUrl,
@@ -230,11 +232,13 @@ public class ImageCache {
                       mDownloadRequest.getListener().getDesiredHeight());
                 Snapshot snapshot = mDiskCache.get(scaledCacheKey);
                 if (snapshot != null) {
-                   return Bitmaps.safeDecodeStream(snapshot.getInputStream(0));
+                   inStream = snapshot.getInputStream(0);
+                   return Bitmaps.safeDecodeStream(inStream);
                 }
                 
                 snapshot = mDiskCache.get(getCacheKey(mUrl));
                 if (snapshot != null) {
+                   inStream = snapshot.getInputStream(0);
                     return Bitmaps.safeDecodeStream(snapshot.getInputStream(0));
                 }
                 
@@ -242,6 +246,8 @@ public class ImageCache {
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
+            } finally {
+               IO.closeQuietly( inStream );
             }
         }
 

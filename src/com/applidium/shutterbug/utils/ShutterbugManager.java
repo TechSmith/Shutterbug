@@ -176,7 +176,8 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                Snapshot cachedSnapshot = sharedImageCache.storeToDisk(inStream, cacheKey);
                if (cachedSnapshot != null) {
                    bitmap = Bitmaps.safeDecodeStream(cachedSnapshot.getInputStream(0));
-   
+                   cachedSnapshot.close();
+                   
                    // Disabled for performance reasons. The caller of this AsyncTask will handling caching.
 //                   if (bitmap != null) {
 //                       sharedImageCache.storeToMemory(bitmap, cacheKey);
@@ -192,12 +193,14 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                   scale *= 2;
                }
                
+               FileInputStream fileInStream = null;
                try {
-                  FileInputStream fileInStream = new FileInputStream(mDownloadRequest.getUrl());
+                  fileInStream = new FileInputStream(mDownloadRequest.getUrl());
                   bitmap = Bitmaps.safeDecodeStream(fileInStream, (int)scale);
-                  IO.closeQuietly( fileInStream );
                } catch (IOException e) {
                   e.printStackTrace();
+               } finally {
+                  IO.closeQuietly( fileInStream );
                }
             }
 
