@@ -93,6 +93,11 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
     @Override
     public void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url) {
+        if (!url.equals(mCurrentUrl)) {
+            XLog.x(this, "URL mismatch; skipping");
+            return;
+        }
+        
         boolean imageNeedsToBeRescaled = getWidth() < bitmap.getWidth() && getHeight() < bitmap.getHeight();
         
         if (mScaleImage && getWidth() > 0 && getHeight() > 0 && imageNeedsToBeRescaled) {
@@ -119,11 +124,15 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
 
     @Override
     public void onImageFailure(ShutterbugManager imageManager, String url) {
-        if (mListener != null) {
-            mListener.onImageFailure(url);
-        }
-        if (mFailureDrawable != null) {
-           setImageDrawable(mFailureDrawable);
+        if (url.equals(mCurrentUrl)) {
+            if (mListener != null) {
+                mListener.onImageFailure(url);
+            }
+            if (mFailureDrawable != null) {
+                setImageDrawable(mFailureDrawable);
+            }
+           
+            mCurrentUrl = "";
         }
     }
 
