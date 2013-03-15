@@ -8,8 +8,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import android.app.ActivityManager;
 import android.content.ComponentCallbacks2;
@@ -21,6 +19,7 @@ import android.os.AsyncTask;
 import com.applidium.shutterbug.cache.DiskLruCache.Editor;
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.utils.DownloadRequest;
+import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
 import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
 
@@ -40,11 +39,10 @@ public class ImageCache {
     private Context                  mContext;
     private LruCache<String, Bitmap> mMemoryCache;
     private DiskLruCache             mDiskCache;
-    private Executor                 mCacheExecutor; // TODO: Merge with Cloud SDK executors
 
     ImageCache(Context context) {
         mContext = context;
-        mCacheExecutor = Executors.newFixedThreadPool( 2 );
+
         // Get memory class of this device, exceeding this amount will throw an
         // OutOfMemory exception.
         final int memClass = ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getMemoryClass();
@@ -103,7 +101,11 @@ public class ImageCache {
         }
 
         if (mDiskCache != null) {
-            new BitmapDecoderTask(url, listener, downloadRequest).executeOnExecutor(mCacheExecutor);
+           ThreadPoolAsyncTaskRunner.runTaskOnPool(
+                 ThreadPoolAsyncTaskRunner.THUMBNAIL_THREAD_POOL,
+                 new BitmapDecoderTask(url, listener, downloadRequest),
+                 (Object[]) null);
+           
             return;
         }
         listener.onImageNotFound(this, url, downloadRequest);
@@ -211,7 +213,7 @@ public class ImageCache {
         mMemoryCache.evictAll();
     }
 
-    private class BitmapDecoderTask extends AsyncTask<Void, Void, Bitmap> {
+    private class BitmapDecoderTask extends AsyncTask<Object, Void, Bitmap> {
         private String mUrl;
         private ImageCacheListener mListener;
         private DownloadRequest    mDownloadRequest;
@@ -223,7 +225,7 @@ public class ImageCache {
         }
 
         @Override
-        protected Bitmap doInBackground(Void... params) {
+        protected Bitmap doInBackground(Object... params) {
             InputStream inStream = null;
             try {
                 String scaledCacheKey = getCacheKey(
