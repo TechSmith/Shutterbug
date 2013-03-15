@@ -59,7 +59,9 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     }
 
     public void download(String url, ShutterbugManagerListener listener) {
-        if (url == null || listener == null || mFailedUrls.contains(url)) {
+        // TODO: Add an option (per URL?) to enable/disable tracking of failed downloads
+        //if (url == null || listener == null || mFailedUrls.contains(url)) {
+        if (url == null || listener == null) {
             return;
         }
 
