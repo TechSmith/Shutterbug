@@ -82,22 +82,26 @@ public class ImageCache {
         int desiredHeight = downloadRequest.getListener().getDesiredHeight();
         
         if ( desiredWidth > 0 && desiredHeight > 0 ) {
-           scaledCacheKey = getCacheKey(url, desiredWidth, desiredHeight);
+            scaledCacheKey = getCacheKey(url, desiredWidth, desiredHeight);
            
-           Bitmap scaledBitmap = mMemoryCache.get(scaledCacheKey);
-           if (scaledBitmap != null) {
-              listener.onImageFound(this, scaledBitmap, url, downloadRequest);
-              return;
-           }
+            synchronized(mMemoryCache) {
+                Bitmap scaledBitmap = mMemoryCache.get(scaledCacheKey);
+                if (scaledBitmap != null) {
+                    listener.onImageFound(this, scaledBitmap, url, downloadRequest);
+                    return;
+                }
+            }
         }
 
         // First check the in-memory cache...
-        Bitmap cachedBitmap = mMemoryCache.get(fullSizeCacheKey);
-
-        if (cachedBitmap != null) {
-            // ...notify listener immediately, no need to go async
-            listener.onImageFound(this, cachedBitmap, url, downloadRequest);
-            return;
+        synchronized(mMemoryCache) {
+           Bitmap cachedBitmap = mMemoryCache.get(fullSizeCacheKey);
+   
+           if (cachedBitmap != null) {
+               // ...notify listener immediately, no need to go async
+               listener.onImageFound(this, cachedBitmap, url, downloadRequest);
+               return;
+           }
         }
 
         if (mDiskCache != null) {
@@ -112,11 +116,15 @@ public class ImageCache {
     }
     
     public boolean hasKeyInMemory(String url) {
-       return mMemoryCache.get(getCacheKey(url)) != null;
+        synchronized(mMemoryCache) {
+            return mMemoryCache.get(getCacheKey(url)) != null;
+        }
     }
     
     public boolean hasKeyInMemory(String url, int preferredWidth, int preferredHeight) {
-       return mMemoryCache.get(getCacheKey(url, preferredWidth, preferredHeight)) != null;
+        synchronized(mMemoryCache) {
+            return mMemoryCache.get(getCacheKey(url, preferredWidth, preferredHeight)) != null;
+        }
     }
 
     public static String getCacheKey(String url) {
@@ -133,7 +141,9 @@ public class ImageCache {
     }
     
     public void remove(String cacheKey) {
-        mMemoryCache.remove(getCacheKey(cacheKey));
+        synchronized(mMemoryCache) {
+            mMemoryCache.remove(getCacheKey(cacheKey));
+        }
 
         try {
             mDiskCache.remove(getCacheKey(cacheKey));
@@ -143,15 +153,19 @@ public class ImageCache {
     }
     
     public List<Bitmap> removeByPrefix(String cacheKeyPrefix) {
-       List<Bitmap> bitmaps = mMemoryCache.removeByPrefix(getCacheKey(cacheKeyPrefix));
-       
-       // TODO: Try to remove from disk cache
-       
-       return bitmaps;
+        synchronized(mMemoryCache) {
+            List<Bitmap> bitmaps = mMemoryCache.removeByPrefix(getCacheKey(cacheKeyPrefix));
+          
+            // TODO: Try to remove from disk cache
+          
+            return bitmaps;
+        }
     }
     
     public void clearMemoryCache() {
-        mMemoryCache.evictAll();
+        synchronized(mMemoryCache) {
+            mMemoryCache.evictAll();
+        }
     }
 
     public Snapshot storeToDisk(InputStream inputStream, String cacheKey) {
@@ -182,25 +196,31 @@ public class ImageCache {
     }
 
     public void storeToMemory(Bitmap bitmap, String cacheKey) {
-        mMemoryCache.put(cacheKey, bitmap);
+        synchronized(mMemoryCache) {
+            mMemoryCache.put(cacheKey, bitmap);
+        }
     }
     
     public void onTrimMemory(int level) {
-       if (mMemoryCache != null) {
-          if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) { // 60
-             // Nearing middle of list of cached background apps
-             mMemoryCache.evictAll();
-          } else if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) { // 40
-             // Entering list of cached background apps
-             mMemoryCache.trimToSize(mMemoryCache.size() / 2);
-          }
-       }
+        synchronized(mMemoryCache) {
+            if (mMemoryCache != null) {
+                if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) { // 60
+                    // Nearing middle of list of cached background apps
+                    mMemoryCache.evictAll();
+                } else if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) { // 40
+                    // Entering list of cached background apps
+                    mMemoryCache.trimToSize(mMemoryCache.size() / 2);
+                }
+            }
+        }
     }
     
     public void onLowMemory() {
-       if (mMemoryCache != null) {
-          mMemoryCache.evictAll();
-       }
+        if (mMemoryCache != null) {
+            synchronized(mMemoryCache) {
+                mMemoryCache.evictAll();
+            }
+        }
     }
 
     public void clear() {
@@ -210,7 +230,9 @@ public class ImageCache {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        mMemoryCache.evictAll();
+        synchronized(mMemoryCache) {
+            mMemoryCache.evictAll();
+        }
     }
 
     private class BitmapDecoderTask extends AsyncTask<Object, Void, Bitmap> {
