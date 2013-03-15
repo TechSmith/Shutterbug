@@ -19,6 +19,7 @@ import com.applidium.shutterbug.cache.ImageCache.ImageCacheListener;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader.ShutterbugDownloaderListener;
 import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
+import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
 
 public class ShutterbugManager implements ImageCacheListener, ShutterbugDownloaderListener {
@@ -194,10 +195,14 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                try {
                   FileInputStream fileInStream = new FileInputStream(mDownloadRequest.getUrl());
                   bitmap = Bitmaps.safeDecodeStream(fileInStream, (int)scale);
+                  IO.closeQuietly( fileInStream );
                } catch (IOException e) {
                   e.printStackTrace();
                }
             }
+
+            IO.closeQuietly( inStream );
+            
             return bitmap;
         }
 
