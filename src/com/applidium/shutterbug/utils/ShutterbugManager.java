@@ -191,9 +191,13 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                inOptions.inJustDecodeBounds = true;
                BitmapFactory.decodeStream(inStream, null, inOptions);
                
-               float scale = 1;
-               while ((inOptions.outWidth / scale / 2) >= mViewWidth && (inOptions.outHeight / scale / 2) >= mViewHeight) {
-                  scale *= 2;
+               boolean haveValidViewBounds = mViewWidth > 0 && mViewHeight > 0; 
+               float scale = 1f;
+               
+               while (haveValidViewBounds && 
+                     (inOptions.outWidth / scale / 2) >= mViewWidth &&
+                     (inOptions.outHeight / scale / 2) >= mViewHeight) {
+                  scale *= 2f;
                }
                
                FileInputStream fileInStream = null;
