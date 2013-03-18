@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import android.os.AsyncTask;
 
@@ -18,12 +20,15 @@ public class ShutterbugDownloader {
         void onImageDownloadFailure(ShutterbugDownloader downloader, DownloadRequest downloadRequest);
     }
 
+    private static final int                   DOWNLOAD_THREADPOOL_SIZE = 5;
+
     private String                             mUrl;
     private ShutterbugDownloaderListener       mListener;
     private byte[]                             mImageData;
     private DownloadRequest                    mDownloadRequest;
     private final static int                   TIMEOUT = 30000;
     private AsyncTask<Void, Void, InputStream> mCurrentTask;
+    private static Executor                    sDownloadExecutor;
 
     public ShutterbugDownloader(String url, ShutterbugDownloaderListener listener, DownloadRequest downloadRequest) {
         mUrl = url;
@@ -48,6 +53,10 @@ public class ShutterbugDownloader {
     }
 
     public void start() {
+        if (sDownloadExecutor == null) {
+            sDownloadExecutor = Executors.newFixedThreadPool(DOWNLOAD_THREADPOOL_SIZE);
+        }
+
         mCurrentTask = new AsyncTask<Void, Void, InputStream>() {
 
             @Override
@@ -90,7 +99,7 @@ public class ShutterbugDownloader {
             }
 
 
-        }.execute();
+        }.executeOnExecutor(sDownloadExecutor);
 
     }
 
