@@ -149,6 +149,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                 listener.onImageFailure(this, downloadRequest.getUrl());
                 mDownloaders.remove(uidx);
                 mDownloadImageListeners.remove(uidx);
+                mDownloadRequests.remove(uidx);
             }
         }
         mDownloadersMap.remove(downloadRequest.getUrl());
@@ -231,6 +232,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
                     }
                     mDownloaders.remove(uidx);
                     mDownloadImageListeners.remove(uidx);
+                    mDownloadRequests.remove(uidx);
                 }
             }
             if (bitmap != null) {
