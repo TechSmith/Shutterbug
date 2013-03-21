@@ -87,10 +87,6 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         }
     }
 
-    public void cancelCurrentImageLoad() {
-        ShutterbugManager.getSharedImageManager(getContext()).cancel(this);
-    }
-
     @Override
     public void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url) {
         if (!url.equals(mCurrentUrl)) {
