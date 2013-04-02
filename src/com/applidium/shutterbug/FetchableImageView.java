@@ -21,9 +21,9 @@ import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.utils.ShutterbugManager;
 import com.applidium.shutterbug.utils.ShutterbugManager.ShutterbugManagerListener;
-import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
-import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
+import com.techsmith.utilities.IO;
+import com.techsmith.utilities.ThreadPoolAsyncTaskRunner;
 import com.techsmith.utilities.XLog;
 
 public class FetchableImageView extends ImageView implements ShutterbugManagerListener {

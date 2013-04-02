@@ -19,9 +19,9 @@ import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.cache.ImageCache.ImageCacheListener;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader.ShutterbugDownloaderListener;
-import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
-import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
+import com.techsmith.utilities.IO;
+import com.techsmith.utilities.ThreadPoolAsyncTaskRunner;
 
 public class ShutterbugManager implements ImageCacheListener, ShutterbugDownloaderListener {
     public interface ShutterbugManagerListener {

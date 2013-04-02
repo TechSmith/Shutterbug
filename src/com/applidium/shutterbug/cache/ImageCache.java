@@ -19,9 +19,9 @@ import android.os.AsyncTask;
 import com.applidium.shutterbug.cache.DiskLruCache.Editor;
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.utils.DownloadRequest;
-import com.techsmith.android.cloudsdk.common.ThreadPoolAsyncTaskRunner;
-import com.techsmith.cloudsdk.IO;
 import com.techsmith.utilities.Bitmaps;
+import com.techsmith.utilities.IO;
+import com.techsmith.utilities.ThreadPoolAsyncTaskRunner;
 
 public class ImageCache {
     public interface ImageCacheListener {
