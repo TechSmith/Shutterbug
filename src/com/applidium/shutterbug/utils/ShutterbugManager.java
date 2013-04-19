@@ -1,5 +1,7 @@
 package com.applidium.shutterbug.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
@@ -22,6 +25,7 @@ import com.applidium.shutterbug.downloader.ShutterbugDownloader.ShutterbugDownlo
 import com.techsmith.utilities.Bitmaps;
 import com.techsmith.utilities.IO;
 import com.techsmith.utilities.ThreadPoolAsyncTaskRunner;
+import com.techsmith.utilities.XLog;
 
 public class ShutterbugManager implements ImageCacheListener, ShutterbugDownloaderListener {
     public interface ShutterbugManagerListener {
@@ -32,6 +36,8 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         int getDesiredWidth();
         
         int getDesiredHeight();
+
+        boolean shouldScaleImage();
     }
 
     private static ShutterbugManager          sImageManager;
@@ -98,7 +104,14 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             return;
         }
 
-        listener.onImageSuccess(this, bitmap, url);
+        if (listener.shouldScaleImage()) {
+            ThreadPoolAsyncTaskRunner.runTaskOnPool(
+                    ThreadPoolAsyncTaskRunner.THUMBNAIL_THREAD_POOL,
+                    new ScaleImageTask(downloadRequest, bitmap),
+                    (Object[]) null);
+        } else {
+            listener.onImageSuccess(this, bitmap, url);
+        }
         mCacheListeners.remove(idx);
         mCacheUrls.remove(idx);
     }
@@ -242,6 +255,69 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             mDownloadersMap.remove(mDownloadRequest.getUrl());
         }
 
+    }
+
+    public class ScaleImageTask extends AsyncTask<Object, Void, Bitmap> {
+        protected DownloadRequest mDownloadRequest;
+        protected Bitmap mBitmap;
+
+        public ScaleImageTask(DownloadRequest downloadRequest, Bitmap bitmap) {
+            mDownloadRequest = downloadRequest;
+            mBitmap = bitmap;
+        }
+
+        protected Bitmap doInBackground(Object... args) {
+            Bitmap thumbnail = null;
+            if (isCancelled() || mBitmap == null) {
+                return null;
+            }
+            
+            ShutterbugManagerListener mgrListener = mDownloadRequest.getListener();
+
+            if (mgrListener.getDesiredWidth() <= 0 && mgrListener.getDesiredHeight() <= 0) {
+                thumbnail = mBitmap;
+            } else {
+                thumbnail = Bitmaps.safeCenterCrop(mBitmap, mgrListener.getDesiredWidth(), mgrListener.getDesiredHeight());
+            }
+
+            if (thumbnail != null) {
+                ImageCache imageCache = ImageCache.getSharedImageCache(mContext);
+                imageCache.storeToMemory(
+                        thumbnail, 
+                        ImageCache.getCacheKey(mDownloadRequest.getUrl(),
+                                mgrListener.getDesiredWidth(),
+                                mgrListener.getDesiredHeight()));
+
+                if (mDownloadRequest.getUrl().startsWith("http")) {
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    thumbnail.compress(CompressFormat.JPEG, 100, stream);
+                    InputStream inStream = new ByteArrayInputStream(stream.toByteArray());
+                    Snapshot snapshot = imageCache.storeToDisk(
+                            inStream,
+                            ImageCache.getCacheKey(
+                                    mDownloadRequest.getUrl(),
+                                    mgrListener.getDesiredWidth(),
+                                    mgrListener.getDesiredHeight()));
+                    
+                    IO.closeQuietly(inStream);
+                    if (snapshot != null) {
+                        snapshot.close();
+                    }
+                }
+            } else {
+                XLog.x(this, "Image from %s was null", mDownloadRequest.getUrl());
+            }
+
+            return thumbnail;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap scaledBitmap) {
+            mDownloadRequest.getListener().onImageSuccess(
+                    ShutterbugManager.this,
+                    scaledBitmap,
+                    mDownloadRequest.getUrl());
+        }
     }
 
     public void cancel(ShutterbugManagerListener listener) {
