@@ -126,11 +126,16 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     
     @Override
     public int getDesiredHeight() {
-       return getHeight();
+        return getHeight();
     }
 
     @Override
     public int getDesiredWidth() {
-       return getWidth();
+        return getWidth();
+    }
+
+    @Override
+    public boolean shouldScaleImage() {
+        return mScaleImage;
     }
 }
