@@ -11,8 +11,10 @@ import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.widget.ImageView;
@@ -31,6 +33,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     private boolean  mScaleImage = false;
     private Drawable mFailureDrawable;
     private String   mCurrentUrl;
+    private Drawable[] mFadeDrawables = new Drawable[2];
     
     public interface FetchableImageViewListener {
         void onImageFetched(Bitmap bitmap, String url);
@@ -118,6 +121,26 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         }
     }
 
+    @Override
+    public void setImageBitmap( Bitmap image ) {
+        setImageDrawable( new BitmapDrawable( getResources(), image ) );
+    }
+    
+    @Override
+    public void setImageDrawable( Drawable drawable ) {
+        if ( getDrawable() != null ) {
+            mFadeDrawables[1] = drawable;
+            TransitionDrawable transition = new TransitionDrawable( mFadeDrawables );
+            
+            super.setImageDrawable( transition );
+            
+            transition.startTransition( 200 );
+        } else {
+            mFadeDrawables[0] = drawable; // Store the first drawable as a base
+            super.setImageDrawable( drawable );
+        }
+    }
+    
     @Override
     public void onImageFailure(ShutterbugManager imageManager, String url) {
         if (url.equals(mCurrentUrl)) {
