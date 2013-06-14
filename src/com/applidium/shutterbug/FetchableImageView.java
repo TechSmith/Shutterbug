@@ -127,7 +127,7 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     
     @Override
     public void setImageDrawable( Drawable drawable ) {
-        if ( getDrawable() != null ) {
+        if ( getDrawable() != null && drawable != null ) {
             mFadeDrawables[1] = drawable;
             TransitionDrawable transition = new TransitionDrawable( mFadeDrawables );
             
