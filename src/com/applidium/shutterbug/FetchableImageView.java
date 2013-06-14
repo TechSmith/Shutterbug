@@ -100,7 +100,6 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         boolean imageNeedsToBeRescaled = getWidth() < bitmap.getWidth() && getHeight() < bitmap.getHeight();
         
         if (mScaleImage && getWidth() > 0 && getHeight() > 0 && imageNeedsToBeRescaled) {
-            setImageBitmap(null);
             ThreadPoolAsyncTaskRunner.runTaskOnPool(
                   ThreadPoolAsyncTaskRunner.THUMBNAIL_THREAD_POOL,
                   new ScaleImageTask(url, getWidth(), getHeight(), bitmap),
