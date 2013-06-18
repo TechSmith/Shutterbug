@@ -8,6 +8,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
@@ -33,7 +34,6 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     private boolean  mScaleImage = false;
     private Drawable mFailureDrawable;
     private String   mCurrentUrl;
-    private Drawable[] mFadeDrawables = new Drawable[2];
     
     public interface FetchableImageViewListener {
         void onImageFetched(Bitmap bitmap, String url);
@@ -107,9 +107,9 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         } else {
             if (mGreyScale) {
                bitmap = getGrayscaleBitmap(bitmap);
-               setImageBitmap(bitmap);
+               fadeInImage(bitmap);
             } else {
-               setImageBitmap(bitmap);
+               fadeInImage(bitmap);
             }
 
             ImageCache.getSharedImageCache(getContext()).storeToMemory(bitmap, ImageCache.getCacheKey(url));
@@ -120,23 +120,27 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
         }
     }
 
-    @Override
-    public void setImageBitmap( Bitmap image ) {
-        setImageDrawable( new BitmapDrawable( getResources(), image ) );
+    public void fadeInImage( Bitmap bitmap ) {
+        fadeInImage( new BitmapDrawable( getResources(), bitmap ) );
     }
     
-    @Override
-    public void setImageDrawable( Drawable drawable ) {
-        if ( getDrawable() != null && drawable != null ) {
-            mFadeDrawables[1] = drawable;
-            TransitionDrawable transition = new TransitionDrawable( mFadeDrawables );
-            
-            super.setImageDrawable( transition );
-            
-            transition.startTransition( 200 );
-        } else {
-            mFadeDrawables[0] = drawable; // Store the first drawable as a base
-            super.setImageDrawable( drawable );
+    public void fadeInImage( Drawable newDrawable ) {
+        Drawable[] layers = new Drawable[]{ getDrawable(), newDrawable };
+       
+        safeGuardLayers( layers );
+        
+        TransitionDrawable transitionDrawable = new TransitionDrawable( layers );
+        
+        setImageDrawable( transitionDrawable );
+        
+        transitionDrawable.startTransition( 200 );
+    }
+    
+    private static void safeGuardLayers( Drawable[] layers ) {
+        for ( int i = 0; i < layers.length; i++ ) {
+            if ( layers[i] == null ) {
+                layers[i] = new ColorDrawable( Color.TRANSPARENT );
+            }
         }
     }
     
@@ -203,7 +207,8 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
            if (mGreyScale) {
               scaledBitmap = getGrayscaleBitmap(scaledBitmap);
            }
-           setImageBitmap(scaledBitmap);
+           
+           fadeInImage( scaledBitmap );
        }
     }
     
