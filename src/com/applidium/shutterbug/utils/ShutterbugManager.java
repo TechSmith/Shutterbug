@@ -18,12 +18,13 @@ import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
 import com.applidium.shutterbug.cache.ImageCache;
 import com.applidium.shutterbug.cache.ImageCache.ImageCacheListener;
 import com.applidium.shutterbug.downloader.ShutterbugDownloader;
-import com.applidium.shutterbug.downloader.ShutterbugDownloader.ShutterbugDownloaderListener;
+import com.applidium.shutterbug.downloader.ShutterbugStreamOpener;
+import com.applidium.shutterbug.downloader.ShutterbugStreamOpener.ShutterbugOnOpenedListener;
 import com.techsmith.utilities.Bitmaps;
 import com.techsmith.utilities.IO;
 import com.techsmith.utilities.ThreadPoolAsyncTaskRunner;
 
-public class ShutterbugManager implements ImageCacheListener, ShutterbugDownloaderListener {
+public class ShutterbugManager implements ImageCacheListener, ShutterbugOnOpenedListener {
     public interface ShutterbugManagerListener {
         void onImageSuccess(ShutterbugManager imageManager, Bitmap bitmap, String url);
 
@@ -40,10 +41,10 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     private List<String>                      mFailedUrls             = Collections.synchronizedList( new ArrayList<String>() );
     private List<ShutterbugManagerListener>   mCacheListeners         = Collections.synchronizedList( new ArrayList<ShutterbugManagerListener>() );
     private List<String>                      mCacheUrls              = Collections.synchronizedList( new ArrayList<String>() );
-    private Map<String, ShutterbugDownloader> mDownloadersMap         = new ConcurrentHashMap<String, ShutterbugDownloader>();
+    private Map<String, ShutterbugStreamOpener> mDownloadersMap       = new ConcurrentHashMap<String, ShutterbugStreamOpener>();
     private List<DownloadRequest>             mDownloadRequests       = Collections.synchronizedList( new ArrayList<DownloadRequest>() );
     private List<ShutterbugManagerListener>   mDownloadImageListeners = Collections.synchronizedList( new ArrayList<ShutterbugManagerListener>() );
-    private List<ShutterbugDownloader>        mDownloaders            = Collections.synchronizedList( new ArrayList<ShutterbugDownloader>() );
+    private List<ShutterbugStreamOpener>      mDownloaders            = Collections.synchronizedList( new ArrayList<ShutterbugStreamOpener>() );
 
     final static private int                  LISTENER_NOT_FOUND      = -1;
 
@@ -118,7 +119,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
 
         // Share the same downloader for identical URLs so we don't download the
         // same URL several times
-        ShutterbugDownloader downloader = mDownloadersMap.get(url);
+        ShutterbugStreamOpener downloader = mDownloadersMap.get(url);
         if (downloader == null) {
             downloader = new ShutterbugDownloader(this, downloadRequest);
             downloader.start();
@@ -130,7 +131,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     }
 
     @Override
-    public void onImageDownloadSuccess(final ShutterbugDownloader downloader, final InputStream inputStream,
+    public void onImageOpenSuccess(final ShutterbugDownloader downloader, final InputStream inputStream,
             final DownloadRequest downloadRequest) {
 
         ThreadPoolAsyncTaskRunner.runTaskOnPool(
@@ -140,10 +141,10 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
     }
 
     @Override
-    public void onImageDownloadFailure(ShutterbugDownloader downloader, DownloadRequest downloadRequest) {
+    public void onImageOpenFailure(ShutterbugDownloader downloader, DownloadRequest downloadRequest) {
         for (int idx = mDownloaders.size() - 1; idx >= 0; idx--) {
             final int uidx = idx;
-            ShutterbugDownloader aDownloader = mDownloaders.get(uidx);
+            ShutterbugStreamOpener aDownloader = mDownloaders.get(uidx);
             if (aDownloader == downloader) {
                 ShutterbugManagerListener listener = mDownloadImageListeners.get(uidx);
                 listener.onImageFailure(this, downloadRequest.getUrl());
@@ -222,7 +223,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             // Notify all the downloadListener with this downloader
             for (int idx = mDownloaders.size() - 1; idx >= 0; idx--) {
                 final int uidx = idx;
-                ShutterbugDownloader aDownloader = mDownloaders.get(uidx);
+                ShutterbugStreamOpener aDownloader = mDownloaders.get(uidx);
                 if (aDownloader == mDownloader) {
                     ShutterbugManagerListener listener = mDownloadImageListeners.get(uidx);
                     if (bitmap != null) {
@@ -252,7 +253,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         }
 
         while ((idx = mDownloadImageListeners.indexOf(listener)) != -1) {
-            ShutterbugDownloader downloader = mDownloaders.get(idx);
+            ShutterbugStreamOpener downloader = mDownloaders.get(idx);
 
             mDownloadRequests.remove(idx);
             mDownloadImageListeners.remove(idx);
@@ -261,7 +262,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
             if (!mDownloaders.contains(downloader)) {
                 // No more listeners are waiting for this download, cancel it
                 downloader.cancel();
-                mDownloadersMap.remove(downloader.getUrl());
+                mDownloadersMap.remove(downloader.getResourceUrl());
             }
         }
 

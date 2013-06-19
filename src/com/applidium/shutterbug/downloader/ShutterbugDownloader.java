@@ -13,35 +13,27 @@ import android.os.AsyncTask;
 
 import com.applidium.shutterbug.utils.DownloadRequest;
 
-public class ShutterbugDownloader {
-    public interface ShutterbugDownloaderListener {
-        void onImageDownloadSuccess(ShutterbugDownloader downloader, InputStream inputStream, DownloadRequest downloadRequest);
-
-        void onImageDownloadFailure(ShutterbugDownloader downloader, DownloadRequest downloadRequest);
-    }
-
+public class ShutterbugDownloader implements ShutterbugStreamOpener {
     private static final int                   DOWNLOAD_THREADPOOL_SIZE = 5;
     private final static int                   TIMEOUT = 30000;
     
     private static Executor                    sDownloadExecutor;
 
-    private ShutterbugDownloaderListener       mListener;
+    private ShutterbugOnOpenedListener         mListener;
     private DownloadRequest                    mDownloadRequest;
     private AsyncTask<Void, Void, InputStream> mCurrentTask;
 
-    public ShutterbugDownloader(ShutterbugDownloaderListener listener, DownloadRequest downloadRequest) {
+    public ShutterbugDownloader(ShutterbugOnOpenedListener listener, DownloadRequest downloadRequest) {
         mListener = listener;
         mDownloadRequest = downloadRequest;
     }
 
-    public String getUrl() {
+    @Override
+    public String getResourceUrl() {
         return mDownloadRequest.getUrl();
     }
 
-    public DownloadRequest getDownloadRequest() {
-        return mDownloadRequest;
-    }
-
+    @Override
     public void start() {
         if (sDownloadExecutor == null) {
             sDownloadExecutor = Executors.newFixedThreadPool(DOWNLOAD_THREADPOOL_SIZE);
@@ -61,9 +53,9 @@ public class ShutterbugDownloader {
                 }
 
                 if (inputStream != null) {
-                    mListener.onImageDownloadSuccess(ShutterbugDownloader.this, inputStream, mDownloadRequest);
+                    mListener.onImageOpenSuccess(ShutterbugDownloader.this, inputStream, mDownloadRequest);
                 } else {
-                    mListener.onImageDownloadFailure(ShutterbugDownloader.this, mDownloadRequest);
+                    mListener.onImageOpenFailure(ShutterbugDownloader.this, mDownloadRequest);
                 }
             }
             
@@ -94,6 +86,7 @@ public class ShutterbugDownloader {
 
     }
 
+    @Override
     public void cancel() {
         if (mCurrentTask != null) {
             mCurrentTask.cancel(true);
