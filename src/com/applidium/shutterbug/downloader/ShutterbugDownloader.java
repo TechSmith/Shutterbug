@@ -21,31 +21,21 @@ public class ShutterbugDownloader {
     }
 
     private static final int                   DOWNLOAD_THREADPOOL_SIZE = 5;
-
-    private String                             mUrl;
-    private ShutterbugDownloaderListener       mListener;
-    private byte[]                             mImageData;
-    private DownloadRequest                    mDownloadRequest;
     private final static int                   TIMEOUT = 30000;
-    private AsyncTask<Void, Void, InputStream> mCurrentTask;
+    
     private static Executor                    sDownloadExecutor;
 
-    public ShutterbugDownloader(String url, ShutterbugDownloaderListener listener, DownloadRequest downloadRequest) {
-        mUrl = url;
+    private ShutterbugDownloaderListener       mListener;
+    private DownloadRequest                    mDownloadRequest;
+    private AsyncTask<Void, Void, InputStream> mCurrentTask;
+
+    public ShutterbugDownloader(ShutterbugDownloaderListener listener, DownloadRequest downloadRequest) {
         mListener = listener;
         mDownloadRequest = downloadRequest;
     }
 
     public String getUrl() {
-        return mUrl;
-    }
-
-    public ShutterbugDownloaderListener getListener() {
-        return mListener;
-    }
-
-    public byte[] getImageData() {
-        return mImageData;
+        return mDownloadRequest.getUrl();
     }
 
     public DownloadRequest getDownloadRequest() {
@@ -61,7 +51,7 @@ public class ShutterbugDownloader {
 
             @Override
             protected InputStream doInBackground(Void... params) {
-                return getBitmapUsingPath( mUrl );
+                return getBitmapUsingPath( mDownloadRequest.getUrl() );
             }
 
             @Override

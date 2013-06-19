@@ -120,7 +120,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugDownload
         // same URL several times
         ShutterbugDownloader downloader = mDownloadersMap.get(url);
         if (downloader == null) {
-            downloader = new ShutterbugDownloader(url, this, downloadRequest);
+            downloader = new ShutterbugDownloader(this, downloadRequest);
             downloader.start();
             mDownloadersMap.put(url, downloader);
         }
