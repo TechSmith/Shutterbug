@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
 
 import com.applidium.shutterbug.cache.DiskLruCache.Snapshot;
@@ -36,8 +35,6 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugOnOpened
         
         int getDesiredHeight();
     }
-
-    public final static String SCHEME_ASSET = "asset";
     
     private static ShutterbugManager          sImageManager;
 
@@ -125,9 +122,8 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugOnOpened
         // same URL several times
         ShutterbugStreamOpener downloader = mDownloadersMap.get(url);
         if (downloader == null) {
-            Uri downloadUri = Uri.parse( url );
             
-            if ( SCHEME_ASSET.equals( downloadUri.getScheme() ) ) {
+            if ( AssetParser.isAssetUri( url ) ) {
                 downloader = new ShutterbugAssetOpener(mContext, this, downloadRequest);
             } else {
                 downloader = new ShutterbugDownloader(this, downloadRequest);
@@ -187,7 +183,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugOnOpened
             final ImageCache sharedImageCache = ImageCache.getSharedImageCache(mContext);
             final String cacheKey = ImageCache.getCacheKey(mDownloadRequest.getUrl());
             Bitmap bitmap = null;
-            if (mDownloadRequest.getUrl().startsWith("http") || mDownloadRequest.getUrl().startsWith(SCHEME_ASSET) ) {
+            if (mDownloadRequest.getUrl().startsWith("http") || AssetParser.isAssetUri( mDownloadRequest.getUrl() ) ) {
                // Store the image in the cache
                Snapshot cachedSnapshot = sharedImageCache.storeToDisk(inStream, cacheKey);
                if (cachedSnapshot != null) {

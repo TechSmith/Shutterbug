@@ -4,12 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.AsyncTask;
 
+import com.applidium.shutterbug.utils.AssetParser;
 import com.applidium.shutterbug.utils.DownloadRequest;
-import com.applidium.shutterbug.utils.ShutterbugManager;
-import com.techsmith.utilities.XLog;
 
 public class ShutterbugAssetOpener implements ShutterbugStreamOpener {
 
@@ -33,14 +31,11 @@ public class ShutterbugAssetOpener implements ShutterbugStreamOpener {
                 InputStream in = null;
                 
                 try {
-                    Uri assetUri = Uri.parse( getResourceUrl() );
+                    String relativePath = AssetParser.relativePathForAssetUri(getResourceUrl());
                     
-                    String absPath = assetUri.getPath();
-                    if ( absPath.length() > 1 ) {
-                        String relativePath = absPath.substring( 1, absPath.length() );
+                    if ( relativePath != null ) {
                         in = mContext.getAssets().open( relativePath );
                     }
-                    
                 } catch ( IOException e ) {
                     e.printStackTrace();
                 }
@@ -57,7 +52,8 @@ public class ShutterbugAssetOpener implements ShutterbugStreamOpener {
                 if ( result != null ) {
                     mListener.onImageOpenSuccess( ShutterbugAssetOpener.this, result, mDownloadRequest );
                 } else {
-                    mListener.onImageOpenFailure( ShutterbugAssetOpener.this, mDownloadRequest );                }
+                    mListener.onImageOpenFailure( ShutterbugAssetOpener.this, mDownloadRequest );
+                }
             }
         };
         
