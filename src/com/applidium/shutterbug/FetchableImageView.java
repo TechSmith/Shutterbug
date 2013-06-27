@@ -73,6 +73,11 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
     }
 
     public void setImage(String url, boolean scaleImageToView, Drawable placeholderDrawable, Drawable failureDrawable, boolean greyScale) {
+        if ( url == null ) {
+            setImageDrawable(failureDrawable);
+            return;
+        }
+        
         boolean urlIsCached = ImageCache.getSharedImageCache(getContext()).hasKeyInMemory(url, getWidth(), getHeight());
         if (!url.equals(mCurrentUrl) || !urlIsCached) {
            mCurrentUrl = url;
@@ -84,9 +89,8 @@ public class FetchableImageView extends ImageView implements ShutterbugManagerLi
            if (placeholderDrawable != null) {
               setImageDrawable(placeholderDrawable);
            }
-           if (url != null) {
-               manager.download(url, this);
-           }
+           
+           manager.download(url, this);
         }
     }
 
