@@ -59,7 +59,6 @@ public class ShutterbugDownloader implements ShutterbugStreamOpener {
                 }
             }
             
-            @SuppressWarnings("resource")
             private InputStream getBitmapUsingPath( String pathToImage ) {
                InputStream in = null;
                try {
