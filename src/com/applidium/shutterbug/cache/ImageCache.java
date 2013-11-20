@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.Locale;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
@@ -41,6 +42,9 @@ public class ImageCache {
     private DiskLruCache             mDiskCache;
 
     ImageCache(Context context) {
+        if (context instanceof Activity) {
+            throw new IllegalArgumentException("Leaked Activity instance!");
+        }
         mContext = context;
 
         // Get memory class of this device, exceeding this amount will throw an
