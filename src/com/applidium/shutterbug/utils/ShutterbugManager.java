@@ -50,7 +50,7 @@ public class ShutterbugManager implements ImageCacheListener, ShutterbugOnOpened
     final static private int                  LISTENER_NOT_FOUND      = -1;
 
     public ShutterbugManager(Context context) {
-        mContext = context;
+        mContext = context.getApplicationContext();
     }
 
     public static ShutterbugManager getSharedImageManager(Context context) {
